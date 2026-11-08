@@ -18,10 +18,22 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No se envió texto' });
   }
 
-  const prompt = `Eres un experto en ciberseguridad. Analiza y desofusca el siguiente script. Devuelve solo el código limpio y funcional:\n\n${textoOfuscado}`;
+  // NUEVO PROMPT: Análisis Forense en lugar de reescritura mágica
+  const prompt = `Eres un experto en ingeniería inversa y ciberseguridad, especializado en ofuscadores de Lua/Luau como MoonVeil.
+  
+  El siguiente script está altamente ofuscado. NO intentes inventar el código original limpio, ya que es una máquina virtual compleja.
+  
+  En su lugar, realiza un ANÁLISIS ESTÁTICO y devuélveme un reporte con lo siguiente:
+  1. Identifica qué ofuscador es y su versión (ej. MoonVeil 2.1.1).
+  2. Extrae todas las cadenas de texto (strings) legibles o cifradas que encuentres.
+  3. Identifica los bloques de bytes principales (arrays).
+  4. Explica brevemente la estructura de la Máquina Virtual (VM) si la tiene.
+  5. Si detectas una capa simple como Base64 o un XOR básico, intenta decodificarla y muestra el resultado.
+  
+  Aquí está el script:
+  \n\n${textoOfuscado}`;
 
   try {
-    // Modelo actualizado a gemini-3.5-flash
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -32,7 +44,7 @@ export default async function handler(req, res) {
           parts: [{ text: prompt }]
         }],
         generationConfig: {
-          temperature: 0.1,
+          temperature: 0.2, // Un poco más de creatividad para el análisis
           maxOutputTokens: 4000
         }
       }),
@@ -46,7 +58,7 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const textoLimpio = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo desofuscar.';
+    const textoLimpio = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo analizar.';
 
     return res.status(200).json({ resultado: textoLimpio });
     
