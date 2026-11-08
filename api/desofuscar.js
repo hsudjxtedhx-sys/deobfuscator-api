@@ -16,10 +16,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No se envió texto' });
   }
 
-  const prompt = `Desofusca el siguiente script y devuelve solo el código limpio:\n\n${textoOfuscado}`;
+  const prompt = `Eres un experto en ciberseguridad. Analiza y desofusca el siguiente script. Devuelve solo el código limpio y funcional:\n\n${textoOfuscado}`;
 
   try {
-    const response = await fetch('https://api-inference.huggingface.co/models/TeanShow/Deepseek-cybersec-33b-instruct', {
+    const response = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Coder-7B-Instruct', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.HF_TOKEN}`,
@@ -27,11 +27,13 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         inputs: prompt,
-        parameters: { max_new_tokens: 4000, temperature: 0.2, return_full_text: false }
+        parameters: { max_new_tokens: 2000, temperature: 0.1, return_full_text: false }
       })
     });
 
     if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Error de HF:", errorData);
       throw new Error(`Error de Hugging Face: ${response.status}`);
     }
 
@@ -42,6 +44,6 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Error al procesar con la IA.' });
+    return res.status(500).json({ error: 'La IA tardó demasiado o el token falló. Intenta de nuevo.' });
   }
 }
