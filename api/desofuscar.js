@@ -1,3 +1,5 @@
+export const maxDuration = 60; // Le da a Vercel 60 segundos para responder
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -28,7 +30,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         inputs: prompt,
         parameters: { max_new_tokens: 2000, temperature: 0.1, return_full_text: false }
-      })
+      }),
+      // Le damos 55 segundos a Hugging Face para que responda
+      signal: AbortSignal.timeout(55000) 
     });
 
     if (!response.ok) {
