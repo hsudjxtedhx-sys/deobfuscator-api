@@ -1,4 +1,4 @@
-export const maxDuration = 60; // Le da a Vercel 60 segundos para responder
+export const maxDuration = 60;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,7 +21,8 @@ export default async function handler(req, res) {
   const prompt = `Eres un experto en ciberseguridad. Analiza y desofusca el siguiente script. Devuelve solo el código limpio y funcional:\n\n${textoOfuscado}`;
 
   try {
-    const response = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Coder-7B-Instruct', {
+    // NUEVO ENDPOINT OFICIAL DE HUGGING FACE
+    const response = await fetch('https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-Coder-7B-Instruct', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.HF_TOKEN}`,
@@ -31,13 +32,12 @@ export default async function handler(req, res) {
         inputs: prompt,
         parameters: { max_new_tokens: 2000, temperature: 0.1, return_full_text: false }
       }),
-      // Le damos 55 segundos a Hugging Face para que responda
-      signal: AbortSignal.timeout(55000) 
+      signal: AbortSignal.timeout(55000)
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("Error de HF:", errorData);
+      console.error("Error de Hugging Face:", errorData);
       throw new Error(`Error de Hugging Face: ${response.status}`);
     }
 
