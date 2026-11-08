@@ -21,33 +21,36 @@ export default async function handler(req, res) {
   const prompt = `Eres un experto en ciberseguridad. Analiza y desofusca el siguiente script. Devuelve solo el código limpio y funcional:\n\n${textoOfuscado}`;
 
   try {
-    // NUEVO ENDPOINT OFICIAL DE HUGGING FACE
-    const response = await fetch('https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-Coder-7B-Instruct', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.HF_TOKEN}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: { max_new_tokens: 2000, temperature: 0.1, return_full_text: false }
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 4000
+        }
       }),
       signal: AbortSignal.timeout(55000)
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("Error de Hugging Face:", errorData);
-      throw new Error(`Error de Hugging Face: ${response.status}`);
+      console.error("Error de Gemini:", errorData);
+      throw new Error(`Error de Gemini: ${response.status}`);
     }
 
     const data = await response.json();
-    const textoLimpio = Array.isArray(data) ? data[0].generated_text : data.generated_text;
+    const textoLimpio = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo desofuscar.';
 
     return res.status(200).json({ resultado: textoLimpio });
     
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'La IA tardó demasiado o el token falló. Intenta de nuevo.' });
+    return res.status(500).json({ error: 'La IA tardó demasiado o hubo un problema de conexión. Intenta de nuevo.' });
   }
 }
